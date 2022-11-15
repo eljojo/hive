@@ -25,8 +25,8 @@
           config.allowUnfree = true;
         };
 
-
         buildInputs = [
+          pkgs.pkg-config
           pkgs.openssl
         ];
         frontend = (pkgs.makeRustPlatform {
@@ -38,27 +38,14 @@
             src = ./.;
             # cargoSha256 = nixpkgs.lib.fakeSha256;
 
+            nativeBuildInputs = buildInputs;
+            buildInputs = buildInputs;
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+            PKG_CONFIG_PATH = pkgs.lib.makeLibraryPath buildInputs;
 
-            cargoSha256 = "sha256-d7pRXXVSkqhLEzEp+39IDkeQlAsqS4KuTPWxnliVbSo=";
+            cargoLock.lockFile = ./Cargo.lock;
+            cargoSha256 = "sha256-GtDtozZfWoZ+jEE4Et7cVHkjjdFDr7MOZ0nh2rGO7mo=";
           };
-        # ruby = pkgs.ruby_3_1;
-
-        # rubyEnv = pkgs.bundlerEnv {
-        #   name = "hydro-bundler-env";
-        #   inherit ruby;
-        #   gemdir = ./.;
-        #   gemset = ./nix/gemset.nix;
-        #   groups = ["default" "development" "test"];
-
-        #   gemConfig.nokogiri = attrs: {
-        #     buildInputs = [ pkgs.libiconv pkgs.zlib ];
-        #   };
-
-        #   gemConfig.openssl = attrs: {
-        #     buildInputs = [ pkgs.openssl ];
-        #   };
-        # };
 
         #hydrofetch = pkgs.stdenv.mkDerivation {
         #  name = "hydrofetch-${self.shortRev or "dirty"}";
