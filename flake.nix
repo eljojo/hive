@@ -29,14 +29,15 @@
           pkgs.pkg-config
           pkgs.openssl
         ];
-        frontend = (pkgs.makeRustPlatform {
+        backend = (pkgs.makeRustPlatform {
             inherit (fenix.packages.${system}.minimal) cargo rustc;
         }).buildRustPackage {
-            pname = "hive-frontend";
+            pname = "hive-backend";
             version = revision;
             doCheck = false;
             src = ./.;
-            # cargoSha256 = nixpkgs.lib.fakeSha256;
+
+            propagatedBuildInputs = [ pkgs.trunk ];
 
             nativeBuildInputs = buildInputs;
             buildInputs = buildInputs;
@@ -45,6 +46,45 @@
 
             cargoLock.lockFile = ./Cargo.lock;
             cargoSha256 = "sha256-GtDtozZfWoZ+jEE4Et7cVHkjjdFDr7MOZ0nh2rGO7mo=";
+          };
+
+
+        fenixPkgs = fenix.packages.${system};
+        fenixWasmEnv = (fenixPkgs.combine [
+          fenixPkgs.latest.rustc
+          fenixPkgs.latest.toolchain
+          fenixPkgs.targets."wasm32-unknown-unknown".latest.rust-std
+        ]);
+        # { target = "wasm32-unknown-unknown";  }
+        frontend = (pkgs.makeRustPlatform {
+            inherit (fenix.packages.${system}.minimal) cargo;
+            rustc = fenixWasmEnv;
+        }).buildRustPackage {
+        #frontend = pkgs.stdenv.mkDerivation {
+            pname = "hive-frontend";
+            version = revision;
+            doCheck = false;
+            src = ./.;
+
+            propagatedBuildInputs = [ pkgs.trunk fenixWasmEnv ];
+
+            nativeBuildInputs = buildInputs;
+            buildInputs = buildInputs;
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+            PKG_CONFIG_PATH = pkgs.lib.makeLibraryPath buildInputs;
+
+            cargoLock.lockFile = ./Cargo.lock;
+            cargoSha256 = "sha256-GtDtozZfWoZ+jEE4Et7cVHkjjdFDr7MOZ0nh2rGO7mo=";
+
+            # buildPhase = ''
+            #   mkdir cargo_home
+            #   export CARGO_HOME=$(pwd)/cargo_home
+            #   cargo install trunk wasm-bindgen-cli cargo-watch
+            #   #rustup target add wasm32-unknown-unknown
+            #   cd frontend
+            #   ${pkgs.trunk}/bin/trunk build
+            # '';
+            # installPhase = "cp -r dist $out";
           };
 
         #hydrofetch = pkgs.stdenv.mkDerivation {
