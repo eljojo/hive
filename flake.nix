@@ -163,7 +163,7 @@
         packages = {
           # ociImage = hydrofetchDockerImage;
           # default = rubyEnv;
-          default = frontend;
+          default = backend;
         };
       });
 }

@@ -13,11 +13,13 @@ use api::token::token;
 struct Greeting {
     en: String,
     de: String,
+    es: String,
+    fi: String,
 }
 
 #[get("/hello")]
 async fn hello() -> impl Responder {
-    let hello = Greeting{ en: "hello".to_owned(), de: "Hallo".to_owned() };
+    let hello = Greeting{ en: "hello".to_owned(), de: "Hallo".to_owned(), es: "Hola".to_owned(), fi: "Mikk".to_owned()};
     web::Json(hello)
 }
 
