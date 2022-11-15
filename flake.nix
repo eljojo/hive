@@ -1,14 +1,20 @@
 {
   description = "web service that scrapes hydro";
 
-  inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.flake-compat = {
-    url = github:edolstra/flake-compat;
-    flake = false;
+  inputs = {
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    flake-compat = {
+      url = github:edolstra/flake-compat;
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat }: flake-utils.lib.eachDefaultSystem
+  outputs = { self, nixpkgs, flake-utils, flake-compat, fenix }: flake-utils.lib.eachDefaultSystem
     (system:
       let
         revision = "${self.lastModifiedDate}-${self.shortRev or "dirty"}";
@@ -19,26 +25,23 @@
           config.allowUnfree = true;
         };
 
-        frontend = pkgs.rustPlatform.buildRustPackage rec {
-          pname = "hive-frontend";
-          version = "beta";
 
-          doCheck = false;
+        buildInputs = [
+          pkgs.openssl
+        ];
+        frontend = (pkgs.makeRustPlatform {
+            inherit (fenix.packages.${system}.minimal) cargo rustc;
+        }).buildRustPackage {
+            pname = "hive-frontend";
+            version = revision;
+            doCheck = false;
+            src = ./.;
+            # cargoSha256 = nixpkgs.lib.fakeSha256;
 
-          src = builtins.path {
-            filter = path: type: type != "directory" || baseNameOf path != "archive";
-            path = ./frontend;
-            name = "src";
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+
+            cargoSha256 = "sha256-d7pRXXVSkqhLEzEp+39IDkeQlAsqS4KuTPWxnliVbSo=";
           };
-
-          cargoSha256 = "03wf9r2csi6jpa7v5sw5lpxkrk4wfzwmzx7k3991q3bdjzcwnnwp";
-
-          # meta = with flake-utils.lib; {
-          #   description = "A fast line-oriented regex search tool, similar to ag and ack";
-          #   homepage = "https://github.com/BurntSushi/ripgrep";
-          # };
-        };
-
         # ruby = pkgs.ruby_3_1;
 
         # rubyEnv = pkgs.bundlerEnv {
